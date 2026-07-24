@@ -1,0 +1,52 @@
+# Project Rules — Expense Tracker (Budget Envelope Edition)
+
+## Stack
+- Frontend: React + Vite, styled-components
+- Backend: Node.js + Express
+- ORM/DB: Prisma + SQLite
+- Tests: Vitest (or Jest) + Supertest for API/integration tests
+
+## Architecture
+- Backend is the source of truth for all business rules. Never trust
+  client-computed totals, balances, or budget checks — recompute server-side.
+- REST API under /api. JSON in/out. No GraphQL.
+- All money values stored as integers in the smallest currency unit (paise)
+  to avoid floating point errors. Convert to display units only in the UI.
+
+## The signature rule (do not simplify away)
+A Category has a monthly budget limit. When a Transaction (expense) is
+created, updated, backdated, or reassigned to a different category, the
+backend must recompute that category's rolling total for the affected
+month(s) and flag (not silently block, unless configured) whether the
+category is now over budget. This must be correct for:
+- backdated transactions (added with a past date)
+- transactions moved between categories (both categories recalculate)
+- transactions edited after creation (old month AND new month recalc if the
+  date changes)
+- the exact boundary (spending == limit is NOT over budget; only > limit is)
+
+## Validation
+- Reject on the backend: negative or zero amounts, missing description,
+  invalid/nonexistent category, invalid date format.
+- Return 4xx with a clear error message shape: { error: string, field?: string }
+
+## Code style
+- Functional React components, hooks only, no class components.
+- Keep business logic (budget calculation, validation) in backend
+  service/util files, not in route handlers directly — route handlers should
+  stay thin and call into a service layer that's independently testable.
+- Prefer small, named functions over large inline logic blocks.
+
+## What NOT to do
+- Do not add authentication — it's explicitly optional/out of scope for Core.
+- Do not use localStorage/sessionStorage for persistence — must be a real
+  DB via the backend.
+- Do not invent extra entities beyond User (seeded), Category, Transaction
+  unless I ask.
+
+## AI workflow expectations
+- When generating a new feature, first restate the plan in 2-4 bullets
+  before writing code, so I can confirm direction.
+- When touching the budget calculation logic, always explain the edge cases
+  considered.
+- Flag any assumption you make instead of silently picking one.
