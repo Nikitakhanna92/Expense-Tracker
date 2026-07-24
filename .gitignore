@@ -1,6 +1,9 @@
 node_modules/
+**/node_modules/
 dist/
+**/dist/
 .env
 database/*.db
 database/*.db-journal
-src/generated/prisma
+src/generated/
+src/generated/prisma/
